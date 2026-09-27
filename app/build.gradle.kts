@@ -12,8 +12,8 @@ android {
         applicationId = "com.quickledger.app"
         minSdk = 29
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0-alpha.2-debug"
+        versionCode = 3
+        versionName = "0.3.0-alpha-debug"
     }
 
     compileOptions {
