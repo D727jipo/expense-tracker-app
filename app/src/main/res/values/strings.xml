@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">快捷记账DB</string>
+    <string name="listener_label">快捷记账账单捕获</string>
+    <string name="accessibility_desc">读取微信/支付宝支付结果页面的金额与备注，用于生成账单（快捷记账DB）</string>
+</resources>
