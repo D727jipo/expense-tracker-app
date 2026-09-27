@@ -1,6 +1,5 @@
 package com.quickledger.app.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,11 +35,9 @@ private val categoryColors = mapOf(
 
 @Composable
 fun RecordItem(record: LedgerRecord, modifier: Modifier = Modifier) {
-    val amountColor by animateColorAsState(
+    val amountColor =
         if (record.isExpense) MaterialTheme.colorScheme.onSurface
-        else Color(0xFF2E9E5B),
-        label = "amountColor",
-    )
+        else Color(0xFF2E9E5B)
     Row(
         modifier = modifier
             .fillMaxWidth()

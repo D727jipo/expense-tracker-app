@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import androidx.compose.runtime.Immutable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@Immutable
 data class LedgerRecord(
     val id: Long,
     val amountCents: Long,
@@ -21,8 +23,7 @@ data class LedgerRecord(
     val category: String,
     val type: Int, // 1 = 支出, 2 = 收入
     val createdAt: Long,
-) {
-    val isExpense: Boolean get() = type == TYPE_EXPENSE
+) {    val isExpense: Boolean get() = type == TYPE_EXPENSE
 
     fun amountText(): String {
         val yuan = amountCents / 100
@@ -68,6 +69,43 @@ object LedgerRepository {
         )
         _version.value += 1
         id
+    }
+
+    data class ImportRow(
+        val amountCents: Long,
+        val merchant: String,
+        val note: String,
+        val category: String,
+        val type: Int,
+        val createdAt: Long,
+    )
+
+    /** 批量插入：单事务完成，只触发一次全局刷新 */
+    suspend fun insertMany(context: Context, rows: List<ImportRow>): Int = withContext(Dispatchers.IO) {
+        val d = helper(context).writableDatabase
+        var count = 0
+        d.beginTransaction()
+        try {
+            for (r in rows) {
+                d.insert(
+                    "records", null,
+                    ContentValues().apply {
+                        put("amount_cents", r.amountCents)
+                        put("merchant", r.merchant)
+                        put("note", r.note)
+                        put("category", r.category)
+                        put("type", r.type)
+                        put("created_at", r.createdAt)
+                    }
+                )
+                count++
+            }
+            d.setTransactionSuccessful()
+        } finally {
+            d.endTransaction()
+        }
+        if (count > 0) _version.value += 1
+        count
     }
 
     suspend fun update(

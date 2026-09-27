@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -179,7 +180,7 @@ fun HomeScreen(
                     .clip(RoundedCornerShape(16.dp)),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                items(recent, key = { it.id }) { record ->
+                items(recent, key = { it.id }, contentType = { "record" }) { record ->
                     Surface(
                         color = if (record.isExpense)
                             Color(0xFFE0524F).copy(alpha = 0.10f)
@@ -193,7 +194,7 @@ fun HomeScreen(
                         RecordItem(record)
                     }
                 }
-                item { Spacer(Modifier.height(24.dp)) }
+                item(contentType = "spacer") { Spacer(Modifier.height(24.dp)) }
             }
         }
     }
@@ -347,8 +348,8 @@ private fun ModeSwitch(mode: SummaryMode, onModeChange: (SummaryMode) -> Unit) {
         val indicatorX by animateDpAsState(
             targetValue = if (mode == SummaryMode.MONTH) 0.dp else half,
             animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMediumLow,
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium,
             ),
             label = "indicatorX",
         )
@@ -357,7 +358,10 @@ private fun ModeSwitch(mode: SummaryMode, onModeChange: (SummaryMode) -> Unit) {
                 .padding(4.dp)
                 .width(half - 4.dp)
                 .height(36.dp)
-                .offset(x = indicatorX)
+                .graphicsLayer {
+                    // 只走绘制合成，动画期间不触发布局测量
+                    translationX = indicatorX.toPx()
+                }
                 .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(18.dp)),
         )
         Row(Modifier.fillMaxSize()) {

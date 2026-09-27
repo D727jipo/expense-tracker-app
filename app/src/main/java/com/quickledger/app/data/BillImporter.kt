@@ -56,6 +56,7 @@ object BillImporter {
 
         var inserted = 0
         var skipped = 0
+        val batch = ArrayList<LedgerRepository.ImportRow>()
 
         for (row in rows.subList(headerIdx + 1, rows.size)) {
             if (row.size < 3) continue
@@ -79,20 +80,20 @@ object BillImporter {
             if (amount == null) { skipped++; continue }
             val merchant = col(row, "交易对方").ifBlank { "导入账单" }
             val note = col(row, "商品", "商品名称")
-            val category = CategoryGuesser.guess("$merchant $note")
 
-            LedgerRepository.insert(
-                context,
-                amountCents = amount,
-                merchant = merchant,
-                note = note,
-                category = category,
-                type = type,
-                createdAt = time,
+            batch.add(
+                LedgerRepository.ImportRow(
+                    amountCents = amount,
+                    merchant = merchant,
+                    note = note,
+                    category = CategoryGuesser.guess("$merchant $note"),
+                    type = type,
+                    createdAt = time,
+                )
             )
-            inserted++
         }
 
+        inserted = LedgerRepository.insertMany(context, batch)
         ImportSummary(format, inserted, skipped)
     }
 

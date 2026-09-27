@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -86,8 +87,8 @@ fun LedgerAppNav(onThemeChanged: () -> Unit) {
         transitionSpec = {
             val forward = targetState != Screen.HOME && initialState == Screen.HOME
             val dir = if (forward) 1 else -1
-            (slideInHorizontally(tween(280)) { it / 3 * dir } + fadeIn(tween(280)))
-                .togetherWith(slideOutHorizontally(tween(280)) { -it / 3 * dir } + fadeOut(tween(280)))
+            (slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { it / 4 * dir } + fadeIn(tween(180)))
+                .togetherWith(slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -it / 4 * dir } + fadeOut(tween(120)))
         },
         label = "nav",
     ) { current ->
