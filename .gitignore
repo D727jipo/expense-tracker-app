@@ -19,3 +19,4 @@ emulator.log
 .zcode/
 *.md
 .zcodeignore
+!README.md
