@@ -59,6 +59,7 @@ import com.quickledger.app.ThemePrefs
 import com.quickledger.app.data.Prefs
 import com.quickledger.app.notify.LedgerNotificationListener
 import com.quickledger.app.shizuku.ShizukuHelper
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(onBack: () -> Unit, onThemeChanged: () -> Unit = {}) {
@@ -102,6 +103,27 @@ fun SettingsScreen(onBack: () -> Unit, onThemeChanged: () -> Unit = {}) {
 
     var captureMethod by remember { mutableStateOf(Prefs.captureMethod(context)) }
     var autoSave by remember { mutableStateOf(Prefs.autoSave(context)) }
+
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var importing by remember { mutableStateOf(false) }
+    var importResult by remember { mutableStateOf<com.quickledger.app.data.ImportSummary?>(null) }
+    var importError by remember { mutableStateOf<String?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            importing = true
+            scope.launch {
+                try {
+                    importResult = com.quickledger.app.data.BillImporter.import(context, uri)
+                } catch (e: Exception) {
+                    importError = e.message ?: "导入失败"
+                } finally {
+                    importing = false
+                }
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -371,11 +393,82 @@ fun SettingsScreen(onBack: () -> Unit, onThemeChanged: () -> Unit = {}) {
             }
         }
 
+        // —— 数据 ——
+        Text(
+            "数据",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            onClick = {
+                if (!importing) {
+                    importLauncher.launch(
+                        arrayOf("text/*", "application/csv", "text/comma-separated-values")
+                    )
+                }
+            },
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("↓", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (importing) "正在导入…" else "导入账单",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        "支持微信支付 / 支付宝导出的 CSV 账单文件",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         Text(
             "快捷记账DB · 本地记账，不上传任何数据\n支付信息通过系统通知读取，仅保存在本机",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 24.dp, bottom = 24.dp),
+        )
+    }
+
+    importResult?.let { result ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { importResult = null },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { importResult = null }) { Text("好的") }
+            },
+            title = { Text("导入完成") },
+            text = {
+                Text("来源：${result.format}\n成功导入 ${result.inserted} 条账单" +
+                    (if (result.skipped > 0) "\n跳过 ${result.skipped} 条（退款/不计收支/无法解析）" else ""))
+            },
+        )
+    }
+
+    importError?.let { msg ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { importError = null },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { importError = null }) { Text("好的") }
+            },
+            title = { Text("导入失败") },
+            text = { Text(msg) },
         )
     }
 }
