@@ -1,0 +1,21 @@
+# Android build
+build/
+app/build/
+.gradle/
+local.properties
+
+# Local toolchain & caches (live in this folder but never commit)
+android-sdk/
+tools/
+.android-home/
+emulator.log
+
+# Packaging archive (APKs are attached to GitHub Releases)
+打包APK/
+
+# Session screenshots
+*.png
+.mimosa/
+.zcode/
+*.md
+.zcodeignore
